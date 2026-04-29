@@ -1,6 +1,6 @@
-Yes — Entrypoint is run.py; avoid invoking main.py or translator.py directly to prevent import issues.
+Yes — Entrypoint is exdBD.py; avoid invoking main.py or translator.py directly to prevent import issues.
 
-Yes — Data flows: inputs in data/input, outputs in data/output; run.py operates on data/input by default.
+Yes — Data flows: inputs in data/input, outputs in data/output; exdBD.py operates on data/input by default.
 
 Yes — Use a virtual environment and install dependencies from requirements.txt to ensure reproducible runs.
 
@@ -12,10 +12,10 @@ Yes — Company name transformations exist (e.g., Gloria Jeans) and should be ap
 
 Yes — Field translation/mapping for the 51 fields is defined in the README; rely on that as canonical guidance.
 
-Yes — To test, place sample inputs in data/input and run: python run.py; verify outputs in data/output.
+Yes — To test, place sample inputs in data/input and run: python exdBD.py; verify outputs in data/output.
 
 Yes — Ensure Python 3.12+ is used; mismatched versions can cause syntax/import errors.
 
-Yes — If an ImportError occurs when running modules directly, switch to running via run.py.
+Yes — If an ImportError occurs when running modules directly, switch to running via exdBD.py.
 
 Yes — Consult README.md first for high-signal repo conventions and usage; do not assume defaults.

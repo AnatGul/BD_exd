@@ -33,16 +33,16 @@ xcopy /s /y "E:\python3121\Lib\site-packages\*" ".venv\Lib\site-packages\"
 
 ```bash
 # Обработать все файлы в текущей папке
-python run.py
+python exdBD.py
 
 # Обработать файлы из указанной папки
-python run.py D:\scans
+python exdBD.py D:\scans
 
 # Обработать один файл
-python run.py D:\scans\declaration.jpg
+python exdBD.py D:\scans\declaration.jpg
 
 # Указать выходную папку
-python run.py D:\scans -o D:\output
+python exdBD.py D:\scans -o D:\output
 ```
 
 ### Из PyCharm
@@ -51,7 +51,7 @@ python run.py D:\scans -o D:\output
 2. `File → Settings → Project → Python Interpreter`
 3. Добавьте System Python: `E:\python3121\python.exe`
 4. Установите зависимости ( см. выше)
-5. Запустите `run.py`
+5. Запустите `exdBD.py`
 
 ### Через bat-файл
 
@@ -63,7 +63,7 @@ run.bat
 
 ```
 bangladesh_export_processor/
-├── run.py                    # Точка входа
+├── exdBD.py                    # Точка входа
 ├── requirements.txt          # Зависимости
 ├── src/
 │   ├── __init__.py

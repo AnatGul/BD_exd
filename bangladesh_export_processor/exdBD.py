@@ -5,16 +5,16 @@
 Main entry point for Bangladesh Export Declaration Processor
 
 Usage:
-    python run.py                           # Process all files in default input directory
-    python run.py <input_dir>            # Process files in specified directory
-    python run.py <input_file>         # Process single file
-    python run.py -o <output_dir>       # Specify output directory
-    python run.py --test                # Run test mode
+    python exdBD.py                           # Process all files in default input directory
+    python exdBD.py <input_dir>            # Process files in specified directory
+    python exdBD.py <input_file>         # Process single file
+    python exdBD.py -o <output_dir>       # Specify output directory
+    python exdBD.py --test                # Run test mode
 
 Examples:
-    python run.py data/input
-    python run.py D:\\scans\\EXD AFL-GJ-2026-005-M.jpg
-    python run.py D:\\scans -o D:\\output
+    python exdBD.py data/input
+    python exdBD.py D:\\scans\\EXD AFL-GJ-2026-005-M.jpg
+    python exdBD.py D:\\scans -o D:\\output
 """
 import os
 import sys
