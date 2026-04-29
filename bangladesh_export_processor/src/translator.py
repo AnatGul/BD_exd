@@ -473,6 +473,10 @@ class Translator:
         
         value = value.strip()
         
+        # Наименование экспортера - транслитерация (до проверки компаний)
+        if field_name == 'Наименование экспортера':
+            return transliterate(value)
+        
         # Always translate company names and organization names
         if any(x in field_name.lower() for x in ['наименование', 'декларант', 'агент', 'перевозчик', 'авиакомпа']):
             if any(x in value.lower() for x in ['ltd', 'llc', 'inc', 'corp', 'co', 'ltd.', 'inc.', 'corp.']):
@@ -482,9 +486,6 @@ class Translator:
                     return self.format_company_name(value)
         
         # Translate based on field (exact match for specific fields)
-        if field_name == 'Наименование экспортера':
-            return transliterate(value)
-
         if field_name == 'Адрес экспортера':
             return transliterate(value)
 
