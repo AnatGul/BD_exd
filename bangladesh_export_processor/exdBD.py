@@ -10,11 +10,13 @@ Usage:
     python exdBD.py <input_file>         # Process single file
     python exdBD.py -o <output_dir>       # Specify output directory
     python exdBD.py --test                # Run test mode
+    python exdBD.py -i "доп запрос"        # Обработка EXD-файлов из папки
 
 Examples:
     python exdBD.py data/input
     python exdBD.py D:\\scans\\EXD AFL-GJ-2026-005-M.jpg
     python exdBD.py D:\\scans -o D:\\output
+    python exdBD.py -i "доп запрос"
 """
 import os
 import sys
@@ -36,10 +38,22 @@ def main():
     parser.add_argument('input', nargs='?', help='Input file or directory')
     parser.add_argument('-o', '--output', help='Output directory or file')
     parser.add_argument('--test', action='store_true', help='Run test mode')
+    parser.add_argument('--in', '-i', dest='in_dir', help='Папка с дополнительными запросами для обработки EXD-файлов')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
     
     args = parser.parse_args()
-    
+
+    # Режим обработки EXD-файлов из "доп запрос"
+    if args.in_dir:
+        from src.extra_processor import run_extra_processor
+        input_path = args.in_dir
+        if not os.path.isabs(input_path):
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            base_dir = os.path.dirname(script_dir)
+            input_path = os.path.join(base_dir, input_path)
+        run_extra_processor(input_path)
+        return
+
     # Determine paths
     if args.test or not args.input:
         # Default to working directory

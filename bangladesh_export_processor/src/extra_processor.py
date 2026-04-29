@@ -1,0 +1,161 @@
+# -*- coding: utf-8 -*-
+"""
+Extra Processor Module - обработка EXD-файлов из папки "доп запрос"
+"""
+import os
+import glob
+from typing import List, Dict
+import tkinter as tk
+from tkinter import ttk
+
+from .main import BangladeshExportProcessor
+
+
+def find_exd_images(root_dir: str) -> List[Dict[str, str]]:
+    """Рекурсивно найти все изображения с 'EXD' в названии."""
+    images = []
+    for ext in ['*.jpg', '*.jpeg', '*.png', '*.bmp']:
+        pattern = os.path.join(root_dir, '**', ext)
+        for path in glob.glob(pattern, recursive=True):
+            if 'EXD' in os.path.basename(path).upper():
+                images.append({
+                    'path': path,
+                    'folder': os.path.dirname(path),
+                    'filename': os.path.basename(path)
+                })
+    return sorted(images, key=lambda x: x['folder'])
+
+
+def show_file_selector(files: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    """Показать Tkinter-окно с чеклистом для выбора файлов."""
+    selected = []
+
+    root = tk.Tk()
+    root.title("Выберите файлы для обработки")
+    root.geometry("750x500")
+
+    # Заголовок
+    label = ttk.Label(root, text=f"Найдено файлов: {len(files)}", font=('Arial', 12, 'bold'))
+    label.pack(pady=10)
+
+    # Treeview с чекбоксами
+    columns = ('Выбрать', 'Папка', 'Файл')
+    tree = ttk.Treeview(root, columns=columns, show='headings', height=18)
+
+    tree.heading('Выбрать', text='✓')
+    tree.heading('Папка', text='Папка')
+    tree.heading('Файл', text='Файл')
+
+    tree.column('Выбрать', width=50, anchor='center')
+    tree.column('Папка', width=300)
+    tree.column('Файл', width=350)
+
+    # Переменные для чекбоксов
+    checkvars = {}
+
+    for i, f in enumerate(files, 1):
+        var = tk.BooleanVar(value=True)
+        checkvars[i] = var
+        folder = os.path.basename(f['folder'])
+        tree.insert('', 'end', values=('☑', folder, f['filename']), tags=('checked',))
+
+    # Скроллбар
+    vsb = ttk.Scrollbar(root, orient='vertical', command=tree.yview)
+    tree.configure(yscrollcommand=vsb.set)
+
+    tree.pack(side='left', fill='both', expand=True, padx=10, pady=5)
+    vsb.pack(side='right', fill='y')
+
+    # Кнопки
+    def update_checkboxes():
+        for i, var in checkvars.items():
+            item = tree.get_children()[i-1]
+            if var.get():
+                tree.item(item, values=('☑', tree.item(item)['values'][1], tree.item(item)['values'][2]))
+            else:
+                tree.item(item, values=('☐', tree.item(item)['values'][1], tree.item(item)['values'][2]))
+
+    def on_confirm():
+        for i, f in enumerate(files, 1):
+            if checkvars[i].get():
+                selected.append(f)
+        root.destroy()
+
+    def on_select_all():
+        for var in checkvars.values():
+            var.set(True)
+        update_checkboxes()
+
+    def on_deselect_all():
+        for var in checkvars.values():
+            var.set(False)
+        update_checkboxes()
+
+    btn_frame = ttk.Frame(root)
+    btn_frame.pack(pady=10)
+
+    ttk.Button(btn_frame, text="Выбрать все", command=on_select_all).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text="Снять все", command=on_deselect_all).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text="Обработать выбранные", command=on_confirm).pack(side='left', padx=20)
+
+    root.mainloop()
+    return selected
+
+
+def process_selected_files(files: List[Dict[str, str]]) -> List[str]:
+    """Обработать выбранные файлы и создать Excel рядом с каждым."""
+    outputs = []
+
+    print(f"\nОбработка {len(files)} файлов...")
+
+    for f in files:
+        input_path = f['path']
+        folder = f['folder']
+        filename = f['filename']
+
+        print(f"  → {filename}")
+
+        processor = BangladeshExportProcessor(folder, folder)
+
+        try:
+            output_path = processor.process_and_save(input_path)
+            outputs.append(output_path)
+            print(f"    Создан: {os.path.basename(output_path)}")
+        except Exception as e:
+            print(f"    Ошибка: {e}")
+
+    return outputs
+
+
+def run_extra_processor(input_dir: str) -> None:
+    """Запустить обработку EXD-файлов из указанной директории."""
+    if not os.path.exists(input_dir):
+        print(f"Папка не найдена: {input_dir}")
+        return
+
+    files = find_exd_images(input_dir)
+
+    if not files:
+        print("EXD-файлы не найдены")
+        return
+
+    print(f"\nНайдено {len(files)} файлов с 'EXD':")
+    for f in files:
+        print(f"  [{os.path.basename(f['folder'])}] {f['filename']}")
+
+    selected = show_file_selector(files)
+
+    if not selected:
+        print("Не выбрано файлов для обработки")
+        return
+
+    outputs = process_selected_files(selected)
+    print(f"\nОбработано файлов: {len(outputs)}")
+
+
+if __name__ == '__main__':
+    test_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'доп запрос')
+    if os.path.exists(test_dir):
+        run_extra_processor(test_dir)
+    else:
+        print(f"Тестовая папка не найдена: {test_dir}")
