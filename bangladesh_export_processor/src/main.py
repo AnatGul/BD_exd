@@ -77,10 +77,9 @@ class BangladeshExportProcessor:
         mapped_fields = self.field_mapper.map_extracted_data(ocr_results)
         full_mapped = self.field_mapper.merge_with_static(mapped_fields)
         
-        # For now, use sample data since OCR won't perfectly recognize all fields
-        # In production, this would come from OCR
-        print("  Using field data...")
-        original_fields = self._get_sample_fields(name)
+        # Используем данные из OCR
+        print("  Using OCR data...")
+        original_fields = full_mapped
         
         # Translate
         print("  Translating...")
