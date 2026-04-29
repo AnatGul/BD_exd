@@ -33,10 +33,16 @@ def find_exd_images(root_dir: str) -> List[Dict[str, str]]:
         pattern = os.path.join(root_dir, '**', ext)
         for path in glob.glob(pattern, recursive=True):
             if 'EXD' in os.path.basename(path).upper():
+                base_name = os.path.splitext(os.path.basename(path))[0]
+                # Проверить, есть ли уже перевод
+                xlsx_path = os.path.join(os.path.dirname(path), f"{base_name} (перевод).xlsx")
+                has_translation = os.path.exists(xlsx_path)
+
                 images.append({
                     'path': path,
                     'folder': os.path.dirname(path),
-                    'filename': os.path.basename(path)
+                    'filename': os.path.basename(path),
+                    'has_translation': has_translation
                 })
     return sorted(images, key=lambda x: x['folder'])
 
@@ -69,10 +75,15 @@ def show_file_selector(files: List[Dict[str, str]]) -> List[Dict[str, str]]:
     checkvars = {}
 
     for i, f in enumerate(files, 1):
-        var = tk.BooleanVar(value=True)
+        # Если перевод уже есть - галочка по умолчанию НЕ стоит
+        has_trans = f.get('has_translation', False)
+        var = tk.BooleanVar(value=not has_trans)
         checkvars[i] = var
         folder = os.path.basename(f['folder'])
-        tree.insert('', 'end', values=('☑', folder, f['filename']), tags=('checked',))
+        # Добавить маркер если перевод уже есть
+        filename_display = f['filename'] + (' ✓' if has_trans else '')
+        checkbox = '☐' if has_trans else '☑'
+        tree.insert('', 'end', values=(checkbox, folder, filename_display), tags=('checked',))
 
     # Скроллбар
     vsb = ttk.Scrollbar(root, orient='vertical', command=tree.yview)
@@ -85,10 +96,15 @@ def show_file_selector(files: List[Dict[str, str]]) -> List[Dict[str, str]]:
     def update_checkboxes():
         for i, var in checkvars.items():
             item = tree.get_children()[i-1]
+            folder = tree.item(item)['values'][1]
+            original_filename = files[i-1]['filename']
+            has_trans = files[i-1].get('has_translation', False)
+            filename_with_marker = original_filename + (' ✓' if has_trans else '')
+
             if var.get():
-                tree.item(item, values=('☑', tree.item(item)['values'][1], tree.item(item)['values'][2]))
+                tree.item(item, values=('☑', folder, filename_with_marker))
             else:
-                tree.item(item, values=('☐', tree.item(item)['values'][1], tree.item(item)['values'][2]))
+                tree.item(item, values=('☐', folder, filename_with_marker))
 
     def on_confirm():
         for i, f in enumerate(files, 1):
