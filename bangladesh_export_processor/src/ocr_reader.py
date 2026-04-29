@@ -37,17 +37,25 @@ class OCRReader:
     def read_image(self, image_path: str) -> List[Dict]:
         """
         Read text from image file
-        
+
         Args:
             image_path: Path to image file
-            
+
         Returns:
             List of dictionaries with text, coordinates and confidence
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found: {image_path}")
-        
-        results = self.reader.readtext(image_path)
+
+        # Используем PIL для загрузки изображения (поддержка кириллицы в путях)
+        # и передаём numpy array в EasyOCR вместо пути к файлу
+        try:
+            img = Image.open(image_path)
+            img_array = np.array(img)
+            results = self.reader.readtext(img_array)
+        except Exception as e:
+            # Если PIL не сработал, пробуем напрямую (для совместимости)
+            results = self.reader.readtext(image_path)
         
         parsed_results = []
         for (bbox, text, confidence) in results:
@@ -63,18 +71,24 @@ class OCRReader:
     def read_image_with_zones(self, image_path: str, zones: Dict[str, Tuple[int, int, int, int]]) -> Dict[str, str]:
         """
         Read text from specific zones of the image
-        
+
         Args:
             image_path: Path to image file
             zones: Dictionary of zone names to (x1, y1, x2, y2) coordinates
-            
+
         Returns:
             Dictionary of zone names to extracted text
         """
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found: {image_path}")
-        
-        results = self.reader.readtext(image_path)
+
+        # Используем PIL для загрузки изображения (поддержка кириллицы)
+        try:
+            img = Image.open(image_path)
+            img_array = np.array(img)
+            results = self.reader.readtext(img_array)
+        except Exception as e:
+            results = self.reader.readtext(image_path)
         zone_results = {zone: "" for zone in zones}
         
         for (bbox, text, confidence) in results:
