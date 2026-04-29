@@ -486,7 +486,7 @@ class Translator:
             return transliterate(value)
 
         if field_name == 'Адрес экспортера':
-            return self.format_address(value)
+            return transliterate(value)
 
         if field_name == 'Наименование получателя/грузополучателя':
             if 'gloria jeans' in value.lower():
