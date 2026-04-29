@@ -53,7 +53,7 @@ def show_file_selector(files: List[Dict[str, str]]) -> List[Dict[str, str]]:
 
     root = tk.Tk()
     root.title("Выберите файлы для обработки")
-    root.geometry("1100x550")
+    root.geometry("1265x633")
 
     # Заголовок
     label = ttk.Label(root, text=f"Найдено файлов: {len(files)}", font=('Arial', 12, 'bold'))
@@ -68,8 +68,8 @@ def show_file_selector(files: List[Dict[str, str]]) -> List[Dict[str, str]]:
     tree.heading('Файл', text='Файл')
 
     tree.column('Выбрать', width=50, anchor='center')
-    tree.column('Папка', width=350)
-    tree.column('Файл', width=450)
+    tree.column('Папка', width=233)
+    tree.column('Файл', width=300)
 
     # Переменные для чекбоксов
     checkvars = {}
