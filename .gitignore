@@ -1,0 +1,31 @@
+# Python environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets
+.env
+*.key
+*.pem
+
+# Logs
+*.log
+
+# Excel temp
+~$*.xlsx
+*.tmp

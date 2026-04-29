@@ -1,0 +1,6 @@
+openpyxl
+python-docx
+pdfplumber
+PyPDF2
+easyocr
+Pillow
