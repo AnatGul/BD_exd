@@ -91,6 +91,20 @@ def show_file_selector(files: List[Dict[str, str]]) -> List[Dict[str, str]]:
             var.set(False)
         update_checkboxes()
 
+    def on_row_click(event):
+        """Обработка клика по строке - переключение галочки."""
+        item_id = tree.identify_row(event.y)
+        if item_id:
+            # Получить индекс элемента (0-based)
+            idx = tree.index(item_id)
+            # Переключить галочку (индексы в checkvars начинаются с 1)
+            checkvars[idx + 1].set(not checkvars[idx + 1].get())
+            # Обновить отображение
+            update_checkboxes()
+
+    # Привязать клик к Treeview
+    tree.bind('<Button-1>', on_row_click)
+
     btn_frame = ttk.Frame(root)
     btn_frame.pack(pady=10)
 
