@@ -7,8 +7,23 @@ import glob
 from typing import List, Dict
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
 
 from .main import BangladeshExportProcessor
+
+
+def select_directory() -> str:
+    """Показать диалог выбора каталога и вернуть путь."""
+    root = tk.Tk()
+    root.withdraw()  # Скрыть главное окно
+
+    folder_selected = filedialog.askdirectory(
+        title="Выберите папку с EXD-файлами",
+        initialdir=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'доп запрос')
+    )
+
+    root.destroy()
+    return folder_selected if folder_selected else ""
 
 
 def find_exd_images(root_dir: str) -> List[Dict[str, str]]:
@@ -143,9 +158,13 @@ def process_selected_files(files: List[Dict[str, str]]) -> List[str]:
 
 def run_extra_processor(input_dir: str) -> None:
     """Запустить обработку EXD-файлов из указанной директории."""
-    if not os.path.exists(input_dir):
-        print(f"Папка не найдена: {input_dir}")
-        return
+    # Если путь не указан или не существует - показать диалог выбора
+    if not input_dir or not os.path.exists(input_dir):
+        print("Выберите папку с EXD-файлами...")
+        input_dir = select_directory()
+        if not input_dir:
+            print("Папка не выбрана")
+            return
 
     files = find_exd_images(input_dir)
 

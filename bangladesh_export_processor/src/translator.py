@@ -484,7 +484,10 @@ class Translator:
         # Translate based on field (exact match for specific fields)
         if field_name == 'Наименование экспортера':
             return transliterate(value)
-        
+
+        if field_name == 'Адрес экспортера':
+            return self.format_address(value)
+
         if field_name == 'Наименование получателя/грузополучателя':
             if 'gloria jeans' in value.lower():
                 return 'АО «КОРПОРАЦИЯ «ГЛОРИЯ ДЖИНС»'
