@@ -21,46 +21,53 @@ class FieldMapper:
         r'^(?:Export\s*Office|EXPO|Office\s*Code)': 'Код офиса экспорта',
         r'^(?:Exporter\s*Code|EXPORTER|Exp\.?Code)': 'Регистрационный номер экспортера',
         r'^Year\b': 'Год',
+        r'Consignor.*?Exporter': 'Наименование экспортера',
         r'^(?:Exporter\s*Name|Exporter|Name\s*of\s*Exporter)': 'Наименование экспортера',
-        r'^(?:BIN|VAT\s*Reg)': 'Регистрационный номер BIN',
+        r'^(?:BIN|VAT\s*Reg)\s*:?\s*\d': 'Регистрационный номер BIN',
         r'^(?:Exporter\s*Address|Address)': 'Адрес экспортера',
         r'^(?:Phone|Tel)': 'Телефон экспортера',
+        r'Consignee.*?Importer': 'Наименование получателя/грузополучателя',
         r'^(?:Consignee|Buyer|Consignee\s*Name)': 'Наименование получателя/грузополучателя',
-        r'^(?:Consignee\s*Address|Ship\s*To)': 'Адрес получателя',
+        r'^(?:Consignee\s*Address|Ship\s*To|STACHKI)': 'Адрес получателя',
         r'^(?:Country\s*Code|CC)': 'Код страны получателя',
+        r'Country\s*of\s*export': 'Страна происхождения',
         r'^(?:Country|Country\s*Name|Country\s*of\s*Origin)': 'Страна происхождения',
+        r'Country\s*destination': 'Страна конечного получателя',
         r'^(?:Carrier|Forwarder|Agent|Declarant)': 'Декларант/Агент',
-        r'^(?:Carrier\s*Code|Agent\s*Code)': 'Код агента',
+        r'^(?:Carrier\s*Code|Agent\s*Code|AIN)': 'Код агента',
         r'^(?:Declarant\s*Address|Agent\s*Address)': 'Адрес декларанта/агента',
+        r'Delivery\s*terms': 'Условия поставки',
         r'^(?:Terms?\s*of?\s*Delivery|INCOTERMS)': 'Условия поставки',
-        r'^(?:Terms?\s*Code|Incoterms\s*Code)': 'Код условий поставки',
+        r'^(?:Terms?\s*Code|Incoterms\s*Code|CZ-)': 'Код условий поставки',
+        r'^(?:Carrier)\b': 'Наименование авиакомпании',
         r'^(?:Airline|Airlines)': 'Наименование авиакомпании',
         r'^(?:Airline\s*Code|Air\s*Line)': 'Код авиакомпании',
         r'^(?:Currency|Curr)': 'Код валюты',
-        r'^(?:Total\s*Value|Value|FOB\s*Value)': 'Общая стоимость',
+        r'^(?:Total\s*Value|Value|FOB\s*Value|Total Invoiced)': 'Общая стоимость',
         r'^(?:Exchange\s*Rate|ER)': 'Курс валют',
-        r'^(?:Bank\s*Name|Bank)': 'Наименование банка',
-        r'^(?:Bank\s*Code)': 'Код банка',
+        r'^(?:Bank\s*Name|Bank)\b': 'Наименование банка',
+        r'^(?:Bank\s*Code|BDDAC)': 'Код банка',
         r'^(?:Port|Port\s*of\s*Shipment)': 'Порт погрузки',
         r'^(?:Customs\s*Station|Custom\s*Station)': 'Код таможни/выпуска',
-        r'^(?:Sector|Fund)': 'Сектор и фонд',
+        r'^(?:Sector|Fund)\b': 'Сектор и фонд',
         r'^(?:Marks?\s*&?\s*Numbers?|Marks?\s*No)': 'Номер места',
-        r'^(?:Package|Pkg\s*Type|Type\s*of\s*Pack)': 'Тип упаковки',
-        r'^(?:HS\s*Code|H\.?S\.?)': 'Код ТН ВЭД',
+        r'^(?:Package|Pkg\s*Type|Type\s*of\s*Pack|Packages\b)': 'Тип упаковки',
+        r'^(?:HS\s*Code|H\.?S\.?)\b': 'Код ТН ВЭД',
         r'^(?:Description|Desc|Goods\s*Description)': 'Описание товара',
-        r'^(?:Quantity|No\.?\s*of\s*Packages)': 'Количество мест (ед)',
-        r'^(?:Net\s*Weight|NW)': 'Количество мест (ед.изм)',
+        r'^(?:Quantity|No\.?\s*of\s*Packages|Quantity.*Units)': 'Количество мест (ед)',
+        r'^(?:Net\s*Weight|NW|Gross\s*weight)': 'Количество мест (ед.изм)',
         r'^(?:CPC\b)': 'Код CPC',
+        r'^(?:CRF|CSR)\s*No': 'Номер CRF/EXP',
         r'^(?:CRF|CSR)': 'Номер CRF/EXP',
         r'^(?:CRF\s*Date|CSR\s*Date)': 'Дата CRF/EXP',
-        r'^(?:UPIUD)': 'UPIUD',
-        r'^(?:NMB\b)': 'NMB',
+        r'^(?:UPIUD)\b': 'UPIUD',
+        r'^(?:NMB|Total\s*Value)\b': 'NMB',
         r'^(?:VM\b)': 'VM',
         r'^(?:Add\.?\s*Value|AV)': 'Дополнительная стоимость',
         r'^(?:BL|Shippig\s*Bill|AWB|Air\s*Way\s*Bill)': 'Номер коносамента',
         r'^(?:BL\s*Date|Shippig\s*Date)': 'Дата коносамента',
         r'^(?:Total\s*Declare|Total\s*Value)': 'Общая декларируемая стоимость',
-        r'^(?:Register|Reg\s*No|Registration)': 'Регистрационный номер',
+        r'^(?:Register|Reg\s*No|Registration)\b': 'Регистрационный номер',
     }
     
 # Static field list (always present in order)
@@ -138,9 +145,15 @@ class FieldMapper:
         
         return None
     
+    def _is_company_name(self, text: str) -> bool:
+        """Check if text looks like a company name"""
+        text_upper = text.upper()
+        company_patterns = ['LTD', 'LLC', 'INC', 'CORP', 'CO.', 'CORPORATION', 'LIMITED', 'ENTERPRISES']
+        return any(p in text_upper for p in company_patterns)
+    
     def map_extracted_data(self, ocr_results: List[Dict]) -> Dict[str, str]:
         """
-        Map OCR results to structured fields
+        Map OCR results to structured fields.
         
         Args:
             ocr_results: List of OCR result dictionaries
@@ -149,28 +162,48 @@ class FieldMapper:
             Dictionary of field names to values
         """
         mapped = {}
-        current_field = None
-        current_value = ""
         
-        for result in ocr_results:
+        # Labels that shouldn't stop value collection
+        SKIP_LABELS = {'BIN:', 'TIN:', 'AIN:', 'NIA', 'CE', 'C.D.', 'Country'}
+        
+        for i, result in enumerate(ocr_results):
             text = result['text'].strip()
-            
             if not text:
                 continue
             
             field_name = self.detect_field_name(text)
             
             if field_name:
-                if current_field and current_value:
-                    mapped[current_field] = current_value.strip()
+                # For name fields, prefer company name patterns
+                name_fields = {'Наименование экспортера', 'Наименование получателя/грузополучателя'}
+                values = []
                 
-                current_field = field_name
-                current_value = text
-            elif current_field:
-                current_value += " " + text
-        
-        if current_field and current_value:
-            mapped[current_field] = current_value.strip()
+                # First pass: look for company names
+                if field_name in name_fields:
+                    for j in range(i + 1, min(i + 15, len(ocr_results))):
+                        next_text = ocr_results[j]['text'].strip()
+                        if not next_text:
+                            continue
+                        if self._is_company_name(next_text):
+                            mapped[field_name] = next_text
+                            break
+                
+                # Second pass: if no company name found, collect regular values
+                if field_name not in mapped:
+                    for j in range(i + 1, min(i + 10, len(ocr_results))):
+                        next_text = ocr_results[j]['text'].strip()
+                        if not next_text:
+                            continue
+                        if next_text in SKIP_LABELS or next_text.isdigit():
+                            continue
+                        if self.detect_field_name(next_text):
+                            break
+                        values.append(next_text)
+                        if len(values) >= 2:
+                            break
+                    
+                    if values:
+                        mapped[field_name] = ' '.join(values)
         
         return mapped
     
