@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-OCR Reader Module - EasyOCR integration for Bangladesh Export Declarations
+OCR Reader Module - Supports both EasyOCR and Tesseract
 """
 import os
 import sys
+import subprocess
 from typing import List, Dict, Tuple
 from PIL import Image
 import numpy as np
@@ -18,25 +19,29 @@ except:
 
 class OCRReader:
     """
-    OCR reader using EasyOCR for text extraction from export declaration images
+    OCR reader supporting EasyOCR and Tesseract
     """
     
-    def __init__(self, languages: List[str] = ['en', 'bn']):
+    def __init__(self, languages: List[str] = ['en', 'bn'], use_tesseract: bool = True):
         """
         Initialize OCR reader
         
         Args:
             languages: List of languages for OCR (default: English, Bengali)
+            use_tesseract: If True, use Tesseract instead of EasyOCR (better quality)
         """
         self.languages = languages
+        self.use_tesseract = use_tesseract
         
-        # Initialize with verbose=False to avoid encoding issues
-        import easyocr
-        self.reader = easyocr.Reader(languages, gpu=False, verbose=False)
+        if not use_tesseract:
+            import easyocr
+            self.reader = easyocr.Reader(languages, gpu=False, verbose=False)
+        else:
+            self.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
     
     def read_image(self, image_path: str) -> List[Dict]:
         """
-        Read text from image file
+        Read text from image file using EasyOCR or Tesseract
 
         Args:
             image_path: Path to image file
@@ -47,14 +52,45 @@ class OCRReader:
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found: {image_path}")
 
-        # Используем PIL для загрузки изображения (поддержка кириллицы в путях)
-        # и передаём numpy array в EasyOCR вместо пути к файлу
+        if self.use_tesseract:
+            return self._read_with_tesseract(image_path)
+        else:
+            return self._read_with_easyocr(image_path)
+    
+    def _read_with_tesseract(self, image_path: str) -> List[Dict]:
+        """Read with Tesseract OCR"""
+        cmd = [self.tesseract_cmd, image_path, 'stdout']
+        result = subprocess.run(
+            cmd, 
+            capture_output=True, 
+            timeout=120,
+            encoding='utf-8',
+            errors='ignore'
+        )
+        
+        # Parse text line by line
+        parsed_results = []
+        lines = result.stdout.split('\n')
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if line:
+                parsed_results.append({
+                    'text': line,
+                    'confidence': 1.0,
+                    'bbox': ((0, i*20), (100, i*20), (100, (i+1)*20), (0, (i+1)*20)),
+                    'raw': line
+                })
+        
+        return parsed_results
+    
+    def _read_with_easyocr(self, image_path: str) -> List[Dict]:
+        """Read with EasyOCR"""
         try:
             img = Image.open(image_path)
             img_array = np.array(img)
             results = self.reader.readtext(img_array)
         except Exception as e:
-            # Если PIL не сработал, пробуем напрямую (для совместимости)
             results = self.reader.readtext(image_path)
         
         parsed_results = []

@@ -33,8 +33,9 @@ class TesseractOCR:
         result = subprocess.run(
             cmd, 
             capture_output=True, 
-            text=True, 
-            timeout=120
+            timeout=120,
+            encoding='utf-8',
+            errors='ignore'
         )
         return result.stdout
     
