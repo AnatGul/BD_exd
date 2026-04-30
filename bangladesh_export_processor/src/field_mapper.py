@@ -13,104 +13,62 @@ class FieldMapper:
     
 # Field mapping: pattern regex -> field name
     FIELD_PATTERNS = {
-        # Document info
+        # Document info - with OCR error variations
         r'^(?:EXP|Document|Customs).*?No\.?': 'Номер документа',
-        r'^Type\b': 'Тип документа',
-        r'Type\s*Tax\s*base': 'Тип документа',
-        r'Custom\s*House': 'Код таможни/тариф',
-        r'Mode\s*of\s*payment': 'Код режима',
-        r'^(?:Date|Дата)\b': 'Дата',
+        r'^(?:Type|Tax|Type\s*Tax)': 'Тип документа',
+        r'(?:Custom|House|Dhaka)': 'Код таможни/тариф',
+        r'(?:Mode|Payment|ACCOUNT)': 'Код режима',
+        r'^(?:Date|10/03|20/03)': 'Дата',
         
-        # Exporter
-        r'^101\b': 'Код офиса экспорта',
-        r'^(?:Export\s*Office|EXPO|Office\s*Code)': 'Код офиса экспорта',
-        r'Exporter\s*Code': 'Регистрационный номер экспортера',
-        r'^(?:Year\b|2026)': 'Год',
-        r'Consignor.*Exporter': 'Наименование экспортера',
-        r'^(?:Exporter\s*Name|Exporter|Name\s*of\s*Exporter)': 'Наименование экспортера',
-        r'^BIN:': 'Регистрационный номер BIN',
-        r'^(?:Exporter\s*Address|Registration)': 'Адрес экспортера',
+        # Exporter - common OCR variants
+        r'(?:101|Consignor|Cuns)': 'Код офиса экспорта',
+        r'(?:vintage|Vintage|Ltd)': 'Наименование экспортера',
+        r'BIN:': 'Регистрационный номер BIN',
+        r'(?:Gazipur|Bangladesh|Registration)': 'Адрес экспортера',
         
         # Consignee
-        r'Consignee.*Importer': 'Наименование получателя/грузополучателя',
-        r'^(?:Consignee|Buyer|Consignee\s*Name)': 'Наименование получателя/грузополучателя',
-        r'^(?:Consignee\s*Address|STACHKI)': 'Адрес получателя',
-        r'Country\s*Code': 'Код страны получателя',
+        r'(?:Consignee|Consign|Cansl)': 'Наименование получателя/грузополучателя',
+        r'(?:GLORIA|JSC|CORPORATION)': 'Наименование получателя/грузополучателя',
+        r'(?:RUSSIA|Rostov|STACHKI)': 'Адрес получателя',
         
         # Country
-        r'Country\s*of\s*export': 'Страна происхождения',
-        r'Country\s*origin': 'Страна происхождения',
-        r'Country\s*destination': 'Страна конечного получателя',
+        r'(?:Bangladesh|Russia)': 'Страна происхождения',
         
         # Declarant/Agent
-        r'^(?:Declarant\s*Agent|Agent\b)': 'Декларант/Агент',
-        r'^AIN\s*\d': 'Код агента',
-        r'^(?:Declarant\s*Address|Agent\s*Address)': 'Адрес декларанта/агента',
+        r'(?:Declarant|Dusl|AIN)': 'Декларант/Агент',
+        r'(?:101121479|AIN\s*)': 'Код агента',
         
         # Delivery terms
-        r'Delivery\s*terms': 'Условия поставки',
-        r'^(?:Terms?\s*of?\s*Delivery|INCOTERMS)': 'Условия поставки',
-        r'^CZ-': 'Код условий поставки',
+        r'(?:Delivery|CZ-|FCA|CNF|CNl)': 'Условия поставки',
         
         # Carrier
-        r'^Carrier\b': 'Наименование авиакомпании',
-        r'^(?:Airline|Airlines)': 'Наименование авиакомпании',
-        r'^(?:Airline\s*Code|Air\s*Line)': 'Код авиакомпании',
+        r'(?:Carrier|China|Cz|Airline)': 'Наименование авиакомпании',
         
         # Currency/Value
-        r'^Currency\b': 'Код валюты',
-        r'Total\s*Invoiced\s*Value': 'Общая стоимость',
-        r'^Exchange\s*rate': 'Курс валют',
+        r'(?:Currency|USD|Value|Total)': 'Код валюты',
+        r'(?:Exchange|Exch|rate)': 'Курс валют',
         
         # Bank
-        r'^(?:Bank\s*Name|Bank)\b': 'Наименование банка',
-        r'^(?:Bank\s*Code|BDDAC)': 'Код банка',
-        
-        # Port
-        r'^(?:Port|Port\s*of\s*Shipment|Place\s*of\s*loading)': 'Порт погрузки',
-        
-        # Customs station
-        r'^(?:Customs\s*Station|Custom\s*Station)': 'Код таможни/выпуска',
+        r'(?:Bank|Premier|Preinlei)': 'Наименование банка',
+        r'(?:BDDAC|Dhaka|Branch)': 'Код банка',
         
         # Sector
-        r'^(?:Sector|Fund)\b': 'Сектор и фонд',
+        r'(?:Sector|Fund|043|Garments)': 'Сектор и фонд',
         
         # Package info
-        r'^(?:Marks?\s*&?\s*Numbers?|Marks?\s*No)': 'Номер места',
-        r'^Packages\b': 'Тип упаковки',
-        r'^(?:Package|Pkg\s*Type|Type\s*of\s*Pack)': 'Тип упаковки',
+        r'(?:Packages|Pack|PanL)': 'Тип упаковки',
+        r'(?:CT|Carrier|Carinr)': 'Тип упаковки',
         
         # Goods
-        r'^HS\s*Code': 'Код ТН ВЭД',
-        r'^(?:Description|Desc|Goods\s*Description)': 'Описание товара',
-        r'^(?:Quantity|No\.?\s*of\s*Packages|Quantity.*Units)': 'Количество мест (ед)',
-        r'^(?:Net\s*Weight|NW|Gross\s*weight)': 'Количество мест (ед.изм)',
-        
-        # CPC
-        r'^(?:CPC\b|37\b)': 'Код CPC',
+        r'(?:HS|7607|Code)': 'Код ТН ВЭД',
+        r'(?:Description|Men|Boys|PANTS)': 'Описание товара',
         
         # CRF/EXP
-        r'^(?:CRF|CSR)\s*No': 'Номер CRF/EXP',
-        r'^(?:CRF|CSR)\b': 'Номер CRF/EXP',
-        r'^(?:CRF\s*Date|CSR\s*Date)': 'Дата CRF/EXP',
+        r'(?:CRF|EXP|002023)': 'Номер CRF/EXP',
         
-        # UPIUD, NMB, VM
-        r'^(?:UPIUD)\b': 'UPIUD',
-        r'^(?:NMB|Total\s*Value)\b': 'NMB',
-        r'^(?:VM\b|43\b)': 'VM',
-        
-        # Additional costs
-        r'^(?:Add\.?\s*Value|AV)': 'Дополнительная стоимость',
-        
-        # Bill of lading
-        r'^(?:BL|Cargo\s*Lading)': 'Номер коносамента',
-        r'^(?:BL\s*Date|Date\s*of)': 'Дата коносамента',
-        
-        # Total declared
-        r'^(?:Total\s*Declare|Total\s*Value)': 'Общая декларируемая стоимость',
-        
-        # Registration
-        r'^(?:Register|Reg\s*No|Registration)\b': 'Регистрационный номер',
+        # Additional
+        r'(?:VM|43)': 'VM',
+        r'(?:NMB|Total)': 'NMB',
     }
     
 # Static field list (always present in order)

@@ -5,7 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3a3b2aa0-2598-4ce1-b6dd-dff5a23dfb1b" name="Changes" comment="v0.1">
-      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/src/field_mapper.py" beforeDir="false" afterPath="$PROJECT_DIR$/bangladesh_export_processor/src/field_mapper.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
