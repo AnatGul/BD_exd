@@ -77,6 +77,29 @@ class BangladeshExportProcessor:
         mapped_fields = self.field_mapper.map_extracted_data(ocr_results)
         full_mapped = self.field_mapper.merge_with_static(mapped_fields)
         
+        # B3-B: LLM fallback - если заполнено мало полей
+        filled_count = sum(1 for v in full_mapped.values() if v)
+        if filled_count < 10:
+            print(f"  Only {filled_count} fields filled, trying LLM fallback...")
+            try:
+                from .llm_extractor import LLMFieldExtractor
+                
+                # Get raw text from OCR results
+                ocr_text = " ".join([r['text'] for r in ocr_results])
+                
+                # Extract with LLM patterns
+                llm_fields = LLMFieldExtractor.extract_from_tesseract(ocr_text)
+                
+                # Merge with existing
+                for field, value in llm_fields.items():
+                    if field in full_mapped and not full_mapped[field]:
+                        full_mapped[field] = value
+                
+                new_filled = sum(1 for v in full_mapped.values() if v)
+                print(f"  LLM fallback: {filled_count} -> {new_filled} fields")
+            except Exception as e:
+                print(f"  LLM fallback failed: {e}")
+        
         # Используем данные из OCR
         print("  Using OCR data...")
         original_fields = full_mapped
