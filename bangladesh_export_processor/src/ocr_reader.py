@@ -8,6 +8,7 @@ import subprocess
 from typing import List, Dict, Tuple
 from PIL import Image
 import numpy as np
+import cv2
 
 
 # Fix for Windows encoding issue with EasyOCR
@@ -17,21 +18,65 @@ except:
     pass
 
 
+def preprocess_image(image_path: str, output_path: str = None) -> np.ndarray:
+    """
+    Preprocess image for better OCR results
+    
+    Steps:
+    1. Load image
+    2. Convert to grayscale
+    3. Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    4. Optional: Denoise
+    
+    Args:
+        image_path: Path to input image
+        output_path: Optional path to save preprocessed image
+        
+    Returns:
+        Preprocessed image as numpy array
+    """
+    # Load image
+    img = cv2.imread(image_path)
+    if img is None:
+        # Fallback to PIL if cv2 can't read
+        pil_img = Image.open(image_path)
+        img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+    
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    
+    # Apply CLAHE for contrast enhancement
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    contrast = clahe.apply(gray)
+    
+    # Optional: Apply light denoising
+    # denoised = cv2.fastNlMeansDenoising(contrast, None, 10, 7, 21)
+    
+    # Save preprocessed image if path provided
+    if output_path:
+        cv2.imwrite(output_path, contrast)
+    
+    return contrast
+
+
 class OCRReader:
     """
     OCR reader supporting EasyOCR and Tesseract
     """
     
-    def __init__(self, languages: List[str] = ['en', 'bn'], use_tesseract: bool = True):
+    def __init__(self, languages: List[str] = ['en', 'bn'], use_tesseract: bool = True, 
+                 use_preprocessing: bool = True):
         """
         Initialize OCR reader
         
         Args:
             languages: List of languages for OCR (default: English, Bengali)
             use_tesseract: If True, use Tesseract instead of EasyOCR (better quality)
+            use_preprocessing: If True, apply image preprocessing (CLAHE, etc.)
         """
         self.languages = languages
         self.use_tesseract = use_tesseract
+        self.use_preprocessing = use_preprocessing
         
         if not use_tesseract:
             import easyocr
@@ -59,30 +104,47 @@ class OCRReader:
     
     def _read_with_tesseract(self, image_path: str) -> List[Dict]:
         """Read with Tesseract OCR"""
-        cmd = [self.tesseract_cmd, image_path, 'stdout']
-        result = subprocess.run(
-            cmd, 
-            capture_output=True, 
-            timeout=120,
-            encoding='utf-8',
-            errors='ignore'
-        )
         
-        # Parse text line by line
-        parsed_results = []
-        lines = result.stdout.split('\n')
+        # Apply preprocessing if enabled
+        temp_path = None
+        if self.use_preprocessing:
+            # Create temp file for preprocessed image
+            temp_path = image_path + '.preprocessed.png'
+            preprocess_image(image_path, temp_path)
+            image_path = temp_path
         
-        for i, line in enumerate(lines):
-            line = line.strip()
-            if line:
-                parsed_results.append({
-                    'text': line,
-                    'confidence': 1.0,
-                    'bbox': ((0, i*20), (100, i*20), (100, (i+1)*20), (0, (i+1)*20)),
-                    'raw': line
-                })
-        
-        return parsed_results
+        try:
+            cmd = [self.tesseract_cmd, image_path, 'stdout']
+            result = subprocess.run(
+                cmd, 
+                capture_output=True, 
+                timeout=120,
+                encoding='utf-8',
+                errors='ignore'
+            )
+            
+            # Parse text line by line
+            parsed_results = []
+            lines = result.stdout.split('\n')
+            
+            for i, line in enumerate(lines):
+                line = line.strip()
+                if line:
+                    parsed_results.append({
+                        'text': line,
+                        'confidence': 1.0,
+                        'bbox': ((0, i*20), (100, i*20), (100, (i+1)*20), (0, (i+1)*20)),
+                        'raw': line
+                    })
+            
+            return parsed_results
+        finally:
+            # Clean up temp file
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
     
     def _read_with_easyocr(self, image_path: str) -> List[Dict]:
         """Read with EasyOCR"""
