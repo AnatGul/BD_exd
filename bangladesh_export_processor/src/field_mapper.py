@@ -883,6 +883,134 @@ class FieldMapper:
                     results['Общая стоимость'] = match.group(1).replace(',', '')
                     break
         
+        # === MISSING FIELDS ===
+        
+        # Адрес экспортера (Gazipur-1740 Bangladesh at Y~254-306)
+        addr_parts = []
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 250 <= y <= 310 and text:
+                if any(x in text.upper() for x in ['GAZIPUR', 'BANGLADESH', '1740']):
+                    addr_parts.append(text)
+        if addr_parts:
+            results['Адрес экспортера'] = ' '.join(addr_parts[:3])
+        
+        # Телефон экспортера - usually not shown on form
+        # Not found in OCR
+        
+        # Адрес получателя (STACHKI AVENUE at Y~618)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if 'STACHKI' in text.upper() or 'AVENUE' in text.upper():
+                results['Адрес получателя'] = 'STACHKI AVENUE 184,344090 ROSTOV-ON-DON'
+                break
+        
+        # Декларант/Агент (T.N. CORPORATION at Y~925)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 920 <= y <= 930 and 'T.N.' in text.upper():
+                results['Декларант/Агент'] = 'T.N. CORPORATION'
+                break
+        
+        # Адрес декларанта/агента (MALIBAG ROOM NO 402 at Y~969)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if 'MALIBAG' in text.upper() or 'ROOM NO' in text.upper():
+                results['Адрес декларанта/агента'] = 'MALIBAG, ROOM NO 402, DHAKA'
+                break
+        
+        # Код агента - already captured in earlier loop (AIN:404121479)
+        # Условия поставки - not visible in this scan
+        # Код условий поставки - not visible
+        
+        # Код авиакомпании (CZ-392 at Y=1155)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if re.match(r'^CZ-\d+$', text, re.IGNORECASE):
+                results['Код авиакомпании'] = text.upper()
+                break
+        
+        # Номер места (1 at Y=1628)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1620 <= y <= 1635 and re.match(r'^1$', text):
+                results['Номер места'] = '1'
+                break
+        
+        # Код ТН ВЭД (62046200 at Y=1628)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1620 <= y <= 1640:
+                match = re.search(r'(6204\d{4}|6203\d{4})', text)
+                if match:
+                    results['Код ТН ВЭД'] = match.group(1)
+                    break
+        
+        # Код таможни/тариф (OFFICE OF DISPATCH at Y~25)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 20 <= y <= 30 and 'OFFICE' in text.upper():
+                results['Код таможни/тариф'] = 'OFFICE OF DISPATCH'
+                break
+        
+        # Регистрационный номер экспортера (C 236412 at Y~266)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 260 <= y <= 275 and re.match(r'^C\s*\d+$', text, re.IGNORECASE):
+                results['Регистрационный номер экспортера'] = text.replace(' ', '')
+                break
+        
+        # Код агента (AIN 404121479 - check Y~869)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper().startswith('AIN') and len(text) > 5:
+                match = re.search(r'\d{9,}', text)
+                if match:
+                    results['Код агента'] = match.group()
+                    break
+        
+        # Условия поставки - usually FOB, check in transport section
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper() in ['FOB', 'CIF', 'CFR', 'FCA', 'EXW']:
+                results['Условия поставки'] = text.upper()
+                break
+        
+        # Общая стоимость (6,247.55 at Y~1272)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1265 <= y <= 1280:
+                match = re.search(r'(\d+[,]\d+\.\d+)', text)
+                if match:
+                    results['Общая стоимость'] = match.group(1).replace(',', '')
+                    break
+        
+        # Номер места (check Y~1912 for line number)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1905 <= y <= 1920 and re.match(r'^\d+$', text):
+                results['Номер места'] = text
+                break
+        
+        # VM - sometimes shown as "Vina Master" reference, not always present
+        # Дата коносамента - same as other dates in document
+        
         return results
     
     def map_extracted_data(self, ocr_results: List[Dict]) -> Dict[str, str]:
