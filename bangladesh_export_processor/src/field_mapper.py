@@ -585,36 +585,87 @@ class FieldMapper:
                 continue
             bbox = r.get('bbox', ((0,0),(0,0),(0,0),(0,0)))
             y = (bbox[0][1] + bbox[1][1]) // 2
-            y_key = y // 10  # Group by Y/10
+            y_key = y // 10
             if y_key not in y_groups:
                 y_groups[y_key] = []
             y_groups[y_key].append(text)
         
-        # Type doc: look for Y=28 group (BILL OF ENTRY / EXPORT)
+        # === Header fields ===
+        # Type doc: BILL OF ENTRY / EXPORT
         if 2 in y_groups:
-            tokens = y_groups[2]  # Y around 20-30
+            tokens = y_groups[2]
             text = ' '.join(tokens)
             if 'BILL' in text.upper() and ('ENTRY' in text.upper() or 'EXPORT' in text.upper()):
                 results['Тип документа'] = 'BILL OF ENTRY / EXPORT'
         
-        # BIN: Look for "BIN:" at Y around 163
+        # Office of Dispatch (Код таможни/тариф)
+        if 2 in y_groups:
+            for t in y_groups[2]:
+                if 'OFFICE' in t.upper() and 'DISPATCH' in t.upper():
+                    results['Код таможни/тариф'] = 'OFFICE OF DISPATCH'
+                    break
+        
+        # Year: 2026
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if re.match(r'^2026$', text):
+                results['Год'] = '2026'
+                break
+        
+        # === Exporter fields ===
+        # BIN number at Y~163
         for r in ocr_results:
             text = r.get('text', '').strip()
             bbox = r.get('bbox')
             y = (bbox[0][1] + bbox[1][1]) // 2
             if 160 <= y <= 170 and text.upper().startswith('BIN:'):
-                match = re.search(r'([0-9]{12,15})', text)
+                match = re.search(r'([0-9\-]+)', text.replace('BIN:', ''))
                 if match:
-                    results['Регистрационный номер BIN'] = match.group(1)
+                    results['Регистрационный номер BIN'] = match.group(1).strip('-')
         
-        # Currency: find USD
+        # TIN (налоговый номер)
         for r in ocr_results:
             text = r.get('text', '').strip()
-            if text.upper() in ['USD', 'US']:
+            if text.upper().startswith('TIN:'):
+                match = re.search(r'TIN:(\d+)', text, re.IGNORECASE)
+                if match:
+                    results['Код офиса экспорта'] = match.group(1)
+        
+        # === Consignee (получатель) ===
+        # Country - Bangladesh at Y~919
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper() in ['BANGLADESH', 'BD']:
+                results['Страна происхождения'] = 'Bangladesh'
+                break
+        
+        # Destination country - Russia at Y~1007
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1000 <= y <= 1015 and text.upper() in ['RUSSIA', 'RU']:
+                results['Код страны получателя'] = 'Russia'
+                break
+        
+        # === Declarant ===
+        # AIN (agent code) at Y~869
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper().startswith('AIN:'):
+                match = re.search(r'AIN:(\d+)', text, re.IGNORECASE)
+                if match:
+                    results['Код агента'] = match.group(1)
+        
+        # === Transport ===
+        # Currency
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper() in ['USD', 'US DOLLAR']:
                 results['Код валюты'] = 'USD'
                 break
         
-        # Exchange rate: find 122.x pattern
+        # Exchange rate
         for r in ocr_results:
             text = r.get('text', '').strip()
             match = re.search(r'\b(122\.\d+)\b', text)
@@ -622,7 +673,14 @@ class FieldMapper:
                 results['Курс валют'] = match.group(1)
                 break
         
-        # Carrier: look for "China Southern Airlines" at Y around 1269
+        # Delivery terms (FOB)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper() in ['FOB', 'CIF', 'CFR', 'EXW']:
+                results['Условия поставки'] = text.upper()
+                break
+        
+        # Carrier
         carrier_text = ""
         for r in ocr_results:
             text = r.get('text', '').strip()
@@ -637,7 +695,7 @@ class FieldMapper:
         elif 'BDDAC' in carrier_text.upper():
             results['Наименование авиакомпании'] = 'BDDAC'
         
-        # Bank: look for "Premier Bank" at Y around 1450
+        # === Bank ===
         for r in ocr_results:
             text = r.get('text', '').strip()
             if 'Premier Bank' in text:
@@ -645,6 +703,77 @@ class FieldMapper:
                 break
             if text.upper() == 'BDDAC':
                 results['Наименование банка'] = 'BDDAC'
+        
+        # Bank code (DAC code) at Y~1394
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1390 <= y <= 1400 and re.match(r'^\d{8,9}$', text.replace('-', '')):
+                results['Код банка'] = text
+                break
+        
+        # === Goods ===
+        # HS Code at Y~1628
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1620 <= y <= 1640:
+                match = re.search(r'(6204\d{4}|6203\d{4}|6109\d{4}|6104\d{4})', text)
+                if match:
+                    results['Код ТН ВЭД'] = match.group(1)
+                    break
+        
+        # Package type (CT = carton)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if re.match(r'^CT$', text, re.IGNORECASE):
+                results['Тип упаковки'] = 'CT'
+                break
+        
+        # Number of packages
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1745 <= y <= 1760:
+                match = re.search(r'(\d+)', text)
+                if match and int(match.group(1)) < 10000:
+                    results['Количество мест (ед)'] = match.group(1)
+                    break
+        
+        # CPC code
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if re.match(r'^1072$', text):
+                results['Код CPC'] = '1072'
+                break
+        
+        # === Additional info ===
+        # NMB
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            match = re.search(r'([\d,]+\.\d+)', text)
+            if match and 'NMB' not in text.upper():
+                results['NMB'] = match.group(1).replace(',', '')
+                break
+        
+        # Total Value (assessed value)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            match = re.search(r'([\d,]+\.\d{2})', text)
+            if match and '643' in text:
+                results['Общая декларируемая стоимость'] = match.group(1).replace(',', '')
+                break
+        
+        # Registration number (101P...)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            match = re.search(r'(101P\d+)', text, re.IGNORECASE)
+            if match:
+                results['Регистрационный номер'] = match.group(1)
+                break
         
         return results
     
