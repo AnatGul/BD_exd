@@ -281,16 +281,27 @@ class FieldMapper:
     
     # Post-process patterns to clean extracted values
     CLEANUP_PATTERNS = {
-        'Тип документа': r'BILL\s*(OF|EN)?\s*(ENTRY|/)?\s*(EXPORT)?',
-        'Код валюты': r'(USD|usd)',
+        'Тип документа': r'BILL\s*OF\s*ENTRY\s*/\s*EXPORT',
+        'Код таможни/тариф': r'OFFICE\s*OF\s*DISPATCH',
+        'Код валюты': r'USD',
         'Курс валют': r'\d+\.\d+',
         'NMB': r'[\d,]+\.?\d*',
         'UPIUD': r'\d{14}[-]\d+[,]?\d+',
-        'Общая декларируемая стоимость': r'[\d,]+\.\d+',
+        'Общая декларируемая стоимость': r'[\d,]+\.\d{2}',
         'Код CPC': r'\d{4}',
         'Код ТН ВЭД': r'\d{6}',
-        'Регистрационный номер': r'\d{3}[A-Z]\d+',
+        'Регистрационный номер': r'101P\d+',
+        'Сектор и фонд': r'Garments',
+        'Код банка': r'\d{8,9}',
     }
+    
+    # Fields that should be completely replaced by direct pattern extraction
+    FORCE_OVERRIDE = [
+        'Тип документа', 'Код таможни/тариф', 'Регистрационный номер BIN',
+        'Наименование авиакомпании', 'Код валюты', 'Курс валют',
+        'Сектор и фонд', 'Описание товара', 'Номер CRF/EXP',
+        'Дополнительная стоимость', 'Номер коносамента',
+    ]
     
     STATIC_FIELDS = [
         'Номер документа',
@@ -528,39 +539,40 @@ class FieldMapper:
             match = re.search(pattern, value, re.IGNORECASE)
             if match:
                 value = match.group(0)
-                # For numeric fields, clean the number
-                if field_name in ['Курс валют', 'NMB', 'Общая декларируемая стоимость', 'Код CPC', 'Код ТН ВЭД']:
+                if field_name in ['Курс валют', 'NMB', 'Общая декларируемая стоимость', 'Код CPC', 'Код ТН ВЭД', 'Код банка']:
                     value = value.replace(',', '')
         
-        # Remove common noise patterns
+        # Remove common noise patterns - aggressive cleanup
         noise_patterns = [
-            r'^Currency\s+Total.*',
-            r'^Goods\s+B\s+Name.*',
-            r'^Airlines\s+SD.*',
-            r'^NO\s+#\s*\d+.*',
-            r'^101P\d+\s+GBR.*',
+            (r'^BILL$', 'BILL OF ENTRY / EXPORT'),
+            (r'^OF$', ''),
+            (r'^BIN:.*GLORIA', ''),
+            (r'^Goods\s+B\s+Name.*', ''),
+            (r'^Airlines$', ''),
+            (r'^Airlines\s+SD.*', ''),
+            (r'^NO\s+#\s*\d+.*', ''),
+            (r'^101P\d+\s+GBR.*', ''),
+            (r'^Adjustment\s+.*', ''),
+            (r'^#\d+\s+\d+\s+.*', ''),
+            (r'^Garments\s+Creciit.*', 'Garments'),
+            (r'^Nberof.*', ''),
+            (r'^\|NMB.*', ''),
         ]
         
-        for pattern in noise_patterns:
+        for pattern, replacement in noise_patterns:
             if re.match(pattern, value, re.IGNORECASE):
-                # Try to find a cleaner match
-                if field_name in self.CLEANUP_PATTERNS:
-                    match = re.search(self.CLEANUP_PATTERNS[field_name], value)
-                    if match:
-                        value = match.group(0)
-                    else:
-                        value = ""
+                if replacement:
+                    value = replacement
                 else:
-                    value = ""
+                    return ""
         
-        # If value is too long or looks like garbage, try to extract known patterns
-        if len(value) > 50:
-            for known_key, known_values in self.KNOWN_VALUES.items():
-                for known in known_values:
-                    if known.lower() in value.lower():
-                        return known
+        # If too long, try to extract first meaningful part
+        if len(value) > 40:
+            match = re.match(r'^([A-Z][a-z]+.*?)(?=\s{2,}|[A-Z]{3})', value)
+            if match:
+                value = match.group(1).strip()
         
-        return value[:80]
+        return value[:60]
     
     def detect_field_name(self, text: str) -> Optional[str]:
         """Detect field name from OCR text (fallback method)"""
@@ -775,6 +787,102 @@ class FieldMapper:
                 results['Регистрационный номер'] = match.group(1)
                 break
         
+        # === Add more missing fields ===
+        
+        # Номер документа - can be the same as registration number
+        if 'Регистрационный номер' in results:
+            results['Номер документа'] = results['Регистрационный номер']
+        
+        # Код режима - usually "40" for export
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if re.match(r'^40$', text):
+                results['Код режима'] = '40'
+                break
+        
+        # Регистрационный номер экспортера - could be C number
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 260 <= y <= 280 and re.match(r'^C\d+$', text, re.IGNORECASE):
+                results['Регистрационный номер экспортера'] = text
+                break
+        
+        # Код агента - AIN number
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper().startswith('AIN:'):
+                match = re.search(r'AIN:(\d+)', text, re.IGNORECASE)
+                if match:
+                    results['Код агента'] = match.group(1)
+        
+        # Условия поставки - FOB
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper() in ['FOB', 'CIF', 'CFR', 'EXW', 'FCA']:
+                results['Условия поставки'] = text.upper()
+                break
+        
+        # Код авиакомпании - CZ, CA, etc
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1150 <= y <= 1170 and re.match(r'^(CZ|CA|CZ-\d+)$', text, re.IGNORECASE):
+                results['Код авиакомпании'] = text.upper()
+                break
+        
+        # Порт погрузки - Airport code (DAC = Dhaka)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper() in ['DAC', 'DACCA', 'DHAKA']:
+                results['Порт погрузки'] = 'DAC'
+                break
+        
+        # Номер места
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1640 <= y <= 1660 and re.match(r'^\d+$', text):
+                results['Номер места'] = text
+                break
+        
+        # Количество мест (ед.изм)
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1850 <= y <= 1870 and re.match(r'^\d+$', text):
+                results['Количество мест (ед.изм)'] = text
+                break
+        
+        # VM (Vina Master) - sometimes shown
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if text.upper().startswith('VM'):
+                results['VM'] = text
+                break
+        
+        # Дата CRF/EXP
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            if re.match(r'\d{2}/\d{2}/2026', text):
+                results['Дата CRF/EXP'] = text
+                break
+        
+        # Общая стоимость
+        for r in ocr_results:
+            text = r.get('text', '').strip()
+            bbox = r.get('bbox')
+            y = (bbox[0][1] + bbox[1][1]) // 2
+            if 1270 <= y <= 1280:
+                match = re.search(r'([\d,]+\.\d{2})', text)
+                if match:
+                    results['Общая стоимость'] = match.group(1).replace(',', '')
+                    break
+        
         return results
     
     def map_extracted_data(self, ocr_results: List[Dict]) -> Dict[str, str]:
@@ -785,12 +893,13 @@ class FieldMapper:
         
         # Add direct pattern extraction fallback - ALWAYS override problematic fields
         direct = self._extract_direct_patterns(ocr_results)
-        override_fields = {'Тип документа', 'Код валюты', 'Курс валют', 'Наименование авиакомпании', 
-                          'Наименование банка', 'Регистрационный номер BIN'}
         
         for key, value in direct.items():
-            if key in override_fields:
-                mapped[key] = value  # Always override
+            # Only override if direct value is non-empty and better than existing
+            if key in self.FORCE_OVERRIDE and value and len(value) > 1:
+                mapped[key] = value  # Override garbage with real value
+            elif key not in mapped or not mapped[key]:
+                mapped[key] = value
             elif key not in mapped or not mapped[key]:
                 mapped[key] = value
         
