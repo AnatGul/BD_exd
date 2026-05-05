@@ -76,7 +76,14 @@ class BangladeshExportProcessor:
         print("  Mapping fields...")
         mapped_fields = self.field_mapper.map_extracted_data(ocr_results)
         full_mapped = self.field_mapper.merge_with_static(mapped_fields)
-        
+
+        # Поиск известных значений из обучающей выборки
+        ocr_text = " ".join([r['text'] for r in ocr_results])
+        known_fields = self.field_mapper.find_known_values(ocr_text)
+        for field, value in known_fields.items():
+            if field in full_mapped and not full_mapped[field]:
+                full_mapped[field] = value
+
         # B3-B: LLM fallback - если заполнено мало полей
         filled_count = sum(1 for v in full_mapped.values() if v)
         if filled_count < 10:

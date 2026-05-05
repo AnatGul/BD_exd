@@ -4,7 +4,48 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3a3b2aa0-2598-4ce1-b6dd-dff5a23dfb1b" name="Changes" comment="v0.1" />
+    <list default="true" id="3a3b2aa0-2598-4ce1-b6dd-dff5a23dfb1b" name="Changes" comment="v0.1">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264445.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264471.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264482.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264493.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264504.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264854.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264865.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264876.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264913.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264924.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264935.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63264946.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63265381.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63265403.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD 784-63265436.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD AKL-080-2026-N (CO+SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD AKL-081-2026-M (CO+SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD DAL-2026-GJ-0018-N (CO _SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD EKCL-0033-26-N (COO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD EKCL-0146-26-N (COO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD INV.NDL-11355-2025-N (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD INV.NDL-11357-M-2025 (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD MKWL-002-2026-N-(CO+SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD SDL-GJ-2151-26-N (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-111-26-N (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-136-26-N (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-1638-26 (CO &amp; SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-1639-26-N (CO &amp; SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-1640-26-M (CO &amp; SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-48-26 (CO &amp; SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-49-26-N (CO &amp; SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-50-26-M (CO &amp; SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-83-26-N  (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-88-26-N (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD TTL-91-26-N (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD VDAL-GJ-26-192-N (CO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD VDAL-GJ-26-202-N (COO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/EXD VDAL-GJ-26-220-N (COO_SB)-страницы-2.pdf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bangladesh_export_processor/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/bangladesh_export_processor/src/main.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
