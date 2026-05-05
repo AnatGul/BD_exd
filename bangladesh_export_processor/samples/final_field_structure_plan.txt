@@ -1,0 +1,223 @@
+================================================================================
+ПЛАН: Обновление field_mapper.py с исправленной структурой полей
+Дата: 2026-05-05
+================================================================================
+
+================================================================================
+1. ИТОГОВАЯ СТРУКТУРА ДОКУМЕНТА (48 полей)
+================================================================================
+
+Общие параметры:
+- Размер изображения: ~2500px × ~3700px
+- Левая колонка: X: 0-1200
+- Правая колонка: X: 1200-2500
+
+ТАБЛИЦА ПОЗИЦИЙ ПОЛЕЙ:
+----------------------
+
+| № | Название поля | Label (что искать) | Y-диапазон | Где значение | Пример |
+|---|--------------------|--------------------------|------------|--------------|--------|
+| 1 | Тип документа | BILL OF ENTRY / EXPORT | 20-50 | same_line | BILL OF ENTRY / EXPORT |
+| 1 | Код таможни/тариф | OFFICE OF DISPATCH/EXPORT | 20-50 | same_line | OFFICE OF DISPATCH/EXPORT |
+| 1 | Код режима | DECLARATION [494] | 20-50 | same_line | 494 |
+| 2 | Наименование экспортера | 2 Consignor/Exporter | 160-220 | below (Y+40-100), X:230-1200 | Vintage Denim Apparels Ltd. |
+| 2 | Регистрационный номер BIN | BIN: в строке label 2 | 160-220 | same_line_right | 000158825-0103 |
+| 3 | Дата | Registration | 215-270 | below (Y+20-50), X:1700-2400 | 10/03/2026 |
+| 3 | Регистрационный номер экспортера | текст в правой колонке | 250-320 | X:1700-2400 | 236412 |
+| 3 | Год | дата 20XX | извлечь | 2026 |
+| 5 | Кол-во товаров | 5 | 380-450 | right (X+200-400) | 5 |
+| 6 | Общее кол-во мест | Tot pack T | 380-450 | right (X+200-300) | 85.00 |
+| 7 | Справочный номер | Agent Reference | 380-480 | right (X+200-300) | 2026 #731 |
+| 8 | Наим/адрес получателя | 8 Consignee/importer | 520-580 | below (Y+20-160), X:230-1200 | ВСЕ ВМЕСТЕ |
+| 14 | Декларант/Агент | 14 DectarantAgent | 840-900 | below (Y+15-30), X:230-900 | T.N. CORPORATION LTD. |
+| 14 | код агента | 14 AIN в строке label | 840-900 | same_line_right | 404121479 |
+| 15 | Страна отправления | Country of export | 840-900 | right (X+600-800) | Bangladesh |
+| 16 | Страна происхождения | Country of origin | 960-1000 | right (X+1200-1400) | Bangladesh |
+| 17 | Страна назначения | Country of destination | 960-1000 | right (X+1800-2000) | Russia |
+| 18 | Перевозчик | 18 identity and nationality | 1100-1160 | below (Y+20-60) | label=значение |
+| 20 | Условия поставки | 20 Delivery terms | 1100-1160 | below (Y+60-70) | FOB |
+| 21 | Наименование авиакомпании | 21 Carrier | 1215-1250 | below (Y+50-70), X:230-900 | China Southern Airlines |
+| 21 | Код авиакомпании | CZ-392 или CA | 1215-1250 | в строке ниже | CZ |
+| 22 | Код валюты | Currency | 1215-1250 | right (X+1300-1500) | USD |
+| 22 | Общая стоимость | Total Value | 1215-1250 | right (X+1500-1700) | 6,247.55 |
+| 23 | Курс валют | Exch. rate | 1215-1250 | right (X+1900-2100) | 122.7000 |
+| 25 | Порт погрузки | 25 Place of | 1345-1380 | below (Y+50-70), X:230-900 | DAC Dhaka |
+| 28 | Код банка | Bank Name / The Premier | 1450-1480 | right (X+1350-2000) | The Premier Bank Ltd. |
+| 29 | Код таможни/выпуска | 29 Office of Entry/Exit | 1465-1500 | right (X+200-500) | 101 Custom House, Dhaka |
+| 30 | Сектор и фонд | Sector & Fund | 1500-1530 | right (X+1350-1900) | 043 Garments Credit |
+| 31 | Packages (сложное) | 31 Packages | 1570-1610 | см. подполя | см. ниже |
+| 32 | Item | 32 hom | 1570-1610 | right (X+1600-1800) | 1 |
+| 33 | HS Code | 33 HS Code | 1570-1610 | right (X+1650-1850) | 62046200 |
+| 34 | Gross weight(kg) | 34 C.O. Code | 1570-1610 | right (X+1350-1600) | 1,412.39 |
+| 35 | Описание товара | Description of Goods | 1925-1960 | below (Y+30-50), X:230-1200 | Women's Or Girls' Trousers... |
+| 37 | CPC | 37 CPC | 1650-1700 | right (X+800-1000) | 1072 |
+| 38 | Net weight (kg) | 38 Net weight | 1650-1700 | right (X+800-1000) | 1,013.33 |
+| 40 | Line Number/SL | 40 Line Number/SL | 1920-1960 | right (X+1800-2200) | Cargo Lading No |
+| 44 | Add. info (сложное) | 44 Add. info | 2100-2140 | см. подполя | см. ниже |
+| 45 | Adjustment | 45 Adjustment | 2150-2190 | right (X+2100-2400) | 0.00-0.00 |
+| 46 | Item Assessable Value | 46 fem Value | 2270-2310 | right (X+2000-2300) | 910,932.16 |
+| 48 | Deferred Payment | 48 Deferred payment | 2270-2310 | right (X+2100-2400) | 101P0275 |
+| 52 | DF/CVAT/FP | DFICVATIFP | 2850-2890 | right (X+1750-2100) | 213.27 BDT |
+
+================================================================================
+2. СЛОЖНЫЕ ПОЛЯ С ПОДПОЛЯМИ
+================================================================================
+
+ПОЛЕ 31: Packages and description of goods (Y: 1570-1610)
+---------------------------------------------------------
+- Marks and numbers: X:0-200, pattern: anne.
+- Nber of Pkgs: X:450-700, pattern: \d{3,4} -> "1072"
+- Pkg Code: X:800-1000, pattern: \d{3}
+- Description of Goods: X:200-1200, pattern: Women.*Cotton (в зоне Y:1925-1960)
+
+ПОЛЕ 44: Add. info (Y: 2100-2140)
+--------------------------------
+- CRF/EXP No: X:230-500, pattern: crrexp No (\d+) -> "001682"
+- Дата CRF/EXP: X:700-1000, pattern: 02/03/2026
+- UPIUD: X:1650-1850, pattern: 62132024017-074,88
+- Add. Duty: X:2100-2400, pattern: 203 101 102
+- INV: X:2100-2400, pattern: VDJ/GJ-26/825-M
+
+================================================================================
+3. КРИТИЧЕСКИЕ ПРАВИЛА (ЧТО НЕЛЬЗЯ ДЕЛАТЬ)
+================================================================================
+
+1. НЕЛЬЗЯ привязываться к названиям компаний (Vintage Denim, Gloria Jeans)
+   -> ПРАВИЛЬНО: искать по label "2 Consignor/Exporter"
+
+2. НЕЛЬЗЯ путать поле 34 (Gross weight) и поле 33 (HS Code)
+   -> ПРАВИЛЬНО: 34 = Gross weight(kg), 33 = HS Code
+
+3. НЕЛЬЗЯ путать поле 37 (CPC) и поле 31 (Nber of Pkgs)
+   -> ПРАВИЛЬНО: CPC = "1072", Nber of Pkgs = "85.00"
+
+4. НЕЛЬЗЯ разделять поле 8 на название/адрес/страну
+   -> ПРАВИЛЬНО: все вместе
+
+5. НЕЛЬЗЯ путать поле 31 и 35 (разные Y-диапазоны!)
+   -> ПРАВИЛЬНО: 31 = Y:1570-1610, 35 = Y:1925-1960
+
+================================================================================
+4. СТРУКТУРА LABEL_DEFINITIONS ДЛЯ РЕАЛИЗАЦИИ
+================================================================================
+
+LABEL_DEFINITIONS = {
+    'Тип документа': {
+        'label_pattern': r'BILL\s*OF\s*ENTRY\s*/\s*EXPORT',
+        'label_y_range': (20, 60),
+        'value_pos': 'same_line',
+    },
+    'Код таможни/тариф': {
+        'label_pattern': r'OFFICE\s*OF\s*DISPATCH\s*/\s*EXPORT',
+        'label_y_range': (20, 60),
+        'value_pos': 'same_line',
+    },
+    'Код режима': {
+        'label_pattern': r'DECLARATION\s*\[?\d{3}\]?',
+        'label_y_range': (20, 60),
+        'value_pos': 'same_line',
+    },
+    'Наименование экспортера': {
+        'label_pattern': r'2\s+Consignor\s*/\s*Exporter',
+        'label_y_range': (150, 250),
+        'value_pos': 'below',
+        'value_y_offset': (40, 100),
+        'value_x_range': (200, 1200),
+    },
+    'Регистрационный номер BIN': {
+        'label_pattern': r'BIN:\s*[0-9\-]+',
+        'label_y_range': (150, 250),
+        'value_pos': 'same_line_right',
+    },
+    'Дата': {
+        'label_pattern': r'Registration|10/03/2026|11/03/2026',
+        'label_y_range': (210, 280),
+        'value_pos': 'below',
+        'value_y_offset': (20, 50),
+        'value_x_range': (1700, 2400),
+    },
+    'Наименование/адрес получателя': {
+        'label_pattern': r'8\s+Consignee\s*/\s*importer',
+        'label_y_range': (500, 600),
+        'value_pos': 'below',
+        'value_y_offset': (20, 160),
+        'value_x_range': (200, 1200),
+    },
+    'Декларант/Агент': {
+        'label_pattern': r'14\s+Dectarant\s*/\s*Agent',
+        'label_y_range': (840, 920),
+        'value_pos': 'below',
+        'value_y_offset': (15, 30),
+        'value_x_range': (200, 900),
+    },
+    'Код агента': {
+        'label_pattern': r'AIN\s+\d+',
+        'label_y_range': (840, 920),
+        'value_pos': 'same_line_right',
+    },
+    'Наименование авиакомпании': {
+        'label_pattern': r'21\s+Carrier',
+        'label_y_range': (1210, 1260),
+        'value_pos': 'below',
+        'value_y_offset': (50, 70),
+        'value_x_range': (200, 900),
+    },
+    'Описание товара': {
+        'label_pattern': r'Description\s+of\s+Goods',
+        'label_y_range': (1920, 1970),
+        'value_pos': 'below',
+        'value_y_offset': (30, 50),
+        'value_x_range': (200, 1200),
+    },
+    'Код ТН ВЭД': {
+        'label_pattern': r'33\s+HS\s+Code',
+        'label_y_range': (1560, 1620),
+        'value_pos': 'right_column',
+        'value_x_range': (1650, 1850),
+    },
+    'Gross_weight': {
+        'label_pattern': r'34\s+C\.0\.\s+Code|Gross\s+weight',
+        'label_y_range': (1560, 1620),
+        'value_pos': 'right_column',
+        'value_x_range': (1350, 1600),
+    },
+    'Код CPC': {
+        'label_pattern': r'37\s+CPC',
+        'label_y_range': (1650, 1700),
+        'value_pos': 'right_column',
+        'value_x_range': (800, 1000),
+    },
+    'Общая декларируемая стоимость': {
+        'label_pattern': r'46\s+fem\s+Value|Assessable\s+Value',
+        'label_y_range': (2270, 2310),
+        'value_pos': 'right_column',
+        'value_x_range': (2000, 2300),
+    },
+    'Регистрационный номер': {
+        'label_pattern': r'48\s+Doferred\s+payment',
+        'label_y_range': (2270, 2310),
+        'value_pos': 'right_column',
+        'value_x_range': (2100, 2400),
+    },
+}
+
+================================================================================
+5. АЛГОРИТМ РЕАЛИЗАЦИИ
+================================================================================
+
+1. find_label() - найти label по паттерну в y_range
+2. extract_value() - извлечь значение из зоны относительно label
+3. map_by_labels() - основной метод маппинга
+4. clean_value() - очистка значений
+
+================================================================================
+6. ФАЙЛЫ ДЛЯ ИЗМЕНЕНИЙ
+================================================================================
+
+1. src/field_mapper.py - полностью переписать с новой структурой
+2. src/ocr_reader.py - уже обновлен (TSV + реальные bbox)
+3. src/main.py - уже использует field_mapper
+
+================================================================================
+КОНЕЦ ПЛАНА
+================================================================================

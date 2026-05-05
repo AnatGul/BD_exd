@@ -23,7 +23,7 @@ def preprocess_image(image_path: str, output_path: str = None) -> np.ndarray:
     Preprocess image for better OCR results
     
     Steps:
-    1. Load image
+    1. Load image (with UTF-8 path support)
     2. Convert to grayscale
     3. Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
     4. Optional: Denoise
@@ -35,12 +35,21 @@ def preprocess_image(image_path: str, output_path: str = None) -> np.ndarray:
     Returns:
         Preprocessed image as numpy array
     """
-    # Load image
-    img = cv2.imread(image_path)
-    if img is None:
-        # Fallback to PIL if cv2 can't read
+    # Load image - use PIL first (handles UTF-8 paths better)
+    try:
         pil_img = Image.open(image_path)
-        img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+        img = np.array(pil_img)
+        # Convert RGB to BGR if needed
+        if len(img.shape) == 3 and img.shape[2] == 3:
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    except Exception as e:
+        # Fallback: try cv2 with encoded path
+        try:
+            with open(image_path, 'rb') as f:
+                data = np.frombuffer(f.read(), np.uint8)
+                img = cv2.imdecode(data, cv2.IMREAD_COLOR)
+        except:
+            raise ValueError(f"Cannot read image: {image_path}")
     
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -54,7 +63,9 @@ def preprocess_image(image_path: str, output_path: str = None) -> np.ndarray:
     
     # Save preprocessed image if path provided
     if output_path:
-        cv2.imwrite(output_path, contrast)
+        # Use PIL for saving (handles UTF-8 paths better)
+        contrast_rgb = cv2.cvtColor(contrast, cv2.COLOR_GRAY2RGB)
+        Image.fromarray(contrast_rgb).save(output_path)
     
     return contrast
 
@@ -103,39 +114,101 @@ class OCRReader:
             return self._read_with_easyocr(image_path)
     
     def _read_with_tesseract(self, image_path: str) -> List[Dict]:
-        """Read with Tesseract OCR"""
+        """Read with Tesseract OCR with real coordinates from TSV output"""
         
         # Apply preprocessing if enabled
         temp_path = None
         if self.use_preprocessing:
-            # Create temp file for preprocessed image
-            temp_path = image_path + '.preprocessed.png'
-            preprocess_image(image_path, temp_path)
+            import tempfile
+            import uuid
+            
+            # Create temp file in system temp dir (ASCII path)
+            temp_dir = tempfile.gettempdir()
+            temp_path = os.path.join(temp_dir, f'ocr_{uuid.uuid4().hex}.png')
+            
+            # Preprocess and save
+            processed = preprocess_image(image_path)
+            # Convert BGR to RGB for saving
+            processed_rgb = cv2.cvtColor(processed, cv2.COLOR_BGR2RGB)
+            Image.fromarray(processed_rgb).save(temp_path)
             image_path = temp_path
         
         try:
-            cmd = [self.tesseract_cmd, image_path, 'stdout']
-            result = subprocess.run(
-                cmd, 
-                capture_output=True, 
+            # First get TSV output with coordinates
+            cmd_tsv = [self.tesseract_cmd, image_path, 'stdout', '--psm', '6', 'tsv']
+            result_tsv = subprocess.run(
+                cmd_tsv,
+                capture_output=True,
                 timeout=120,
                 encoding='utf-8',
                 errors='ignore'
             )
             
-            # Parse text line by line
+            # Parse TSV data
             parsed_results = []
-            lines = result.stdout.split('\n')
+            tsv_lines = result_tsv.stdout.strip().split('\n')
             
-            for i, line in enumerate(lines):
-                line = line.strip()
-                if line:
-                    parsed_results.append({
-                        'text': line,
-                        'confidence': 1.0,
-                        'bbox': ((0, i*20), (100, i*20), (100, (i+1)*20), (0, (i+1)*20)),
-                        'raw': line
-                    })
+            # Skip header line
+            for line in tsv_lines[1:]:
+                if not line.strip():
+                    continue
+                fields = line.split('\t')
+                if len(fields) < 12:
+                    continue
+                
+                text = fields[11].strip()
+                if not text:
+                    continue
+                
+                try:
+                    x = int(fields[6])
+                    y = int(fields[7])
+                    w = int(fields[8])
+                    h = int(fields[9])
+                    conf = float(fields[10])
+                except (ValueError, IndexError):
+                    continue
+                
+                # Skip low confidence words
+                if conf < 30:
+                    continue
+                
+                # Create bbox: ((x1,y1), (x2,y2), (x3,y3), (x4,y4))
+                bbox = (
+                    (x, y),
+                    (x + w, y),
+                    (x + w, y + h),
+                    (x, y + h)
+                )
+                
+                parsed_results.append({
+                    'text': text,
+                    'confidence': conf / 100.0,
+                    'bbox': bbox,
+                    'raw': text
+                })
+            
+            # If TSV parsing failed, fallback to line-by-line
+            if not parsed_results:
+                cmd = [self.tesseract_cmd, image_path, 'stdout']
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    timeout=120,
+                    encoding='utf-8',
+                    errors='ignore'
+                )
+                
+                lines = result.stdout.split('\n')
+                for i, line in enumerate(lines):
+                    line = line.strip()
+                    if line:
+                        parsed_results.append({
+                            'text': line,
+                            'confidence': 1.0,
+                            'bbox': ((0, i*20), (100, i*20), (100, (i+1)*20), (0, (i+1)*20)),
+                            'raw': line
+                        })
             
             return parsed_results
         finally:
